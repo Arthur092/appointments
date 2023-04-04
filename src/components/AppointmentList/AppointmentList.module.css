@@ -1,0 +1,30 @@
+.appointmentsContainer {
+    max-width: 400px;
+    width: 100%;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+.appointmentsTitle {
+    text-align: center;
+}
+
+.appointments {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.appointment {
+    width: 100%;
+    padding: 12px;
+    background: #ddd;
+    border-radius: 4px;
+}
