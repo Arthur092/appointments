@@ -1,1 +1,1 @@
-export const options: Record<string, string> = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric' };
+export const options: Record<string, string> = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric'};

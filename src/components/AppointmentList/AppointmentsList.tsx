@@ -15,7 +15,7 @@ export default function loadingPost({ appointments, loading }: loadingPostProps)
 
             <ul className={styles.appointments}>
                 {appointments.map(appointment =>
-                    <li key={appointment.name + appointment.startTime} className={styles.appointment}>
+                    <li key={appointment.startTime} className={styles.appointment}>
                         <b>{appointment.name}</b>
                         <p>
                             {new Date(appointment.startTime).toLocaleDateString("en-US", options)} - {new Date(appointment.endTime).toLocaleDateString("en-US", options)}

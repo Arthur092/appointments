@@ -15,7 +15,7 @@ function App() {
 			setLoading(true)
 			try {
 				const { appointments } = await API.get();
-				setAppointments(appointments);
+				setAppointments(JSON.parse(JSON.stringify(appointments)));
 				setLoading(false);
 			} catch (error) {
 				console.log('Api error:', error);
@@ -35,6 +35,7 @@ function App() {
 				<AppointmentsForm
 					appointments={appointments}
 					loading={loading}
+					setAppointments={setAppointments}
 				/>
 				<AppointmentList
 					appointments={appointments}

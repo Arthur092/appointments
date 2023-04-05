@@ -5,17 +5,18 @@ import styles from "./AppointmentForm.module.css";
 interface AppointmentsFormProps {
 	loading: boolean;
 	appointments: Appointment[],
+	setAppointments: (appointment: Appointment[]) => void
 }
 
 type Errors = Record<string, string | null>;
 
 
-export default function AppointmentsForm({ appointments, loading }: AppointmentsFormProps) {
+export default function AppointmentsForm({ appointments, loading, setAppointments }: AppointmentsFormProps) {
 	const API = useAppointmentsApi();
 
 	const [name, setName] = useState('');
-	const [startTime, setStartTime] = useState<Date | undefined>(undefined);
-	const [endTime, setEndTime] = useState<Date | undefined>(undefined);
+	const [startTime, setStartTime] = useState<string>('');
+	const [endTime, setEndTime] = useState<string>('');
 
 	const [errors, setErrors] = useState<Errors>({});
 	const [isErrors, setIsErrors] = useState(false);
@@ -48,17 +49,25 @@ export default function AppointmentsForm({ appointments, loading }: Appointments
 		try {
 			await API.post({
 				name,
-				startTime: startTime!.getTime(),
-				endTime: endTime!.getTime(),
+				startTime: new Date (startTime).getTime(),
+				endTime: new Date(endTime).getTime(),
 			});
 			setSuccess(true);
 			setLoadingPost(false)
 			successTimer.current = setTimeout(() => {
 				setSuccess(false);
 			},3000);
+			setAppointments([
+				...appointments,
+				{
+					name,
+					startTime: new Date (startTime).getTime(),
+					endTime: new Date(endTime).getTime(),
+				}
+			]);
 			setName('');
-			setStartTime(undefined);
-			setEndTime(undefined);
+			setStartTime('');
+			setEndTime('');
 		} catch (error) {
 			setLoadingPost(false)
 			if(typeof error === 'string') setErrorText(error);
@@ -84,14 +93,14 @@ export default function AppointmentsForm({ appointments, loading }: Appointments
 			...errors,
 			startTime: null
 		})
-		setStartTime(new Date(event.target.value))
+		setStartTime(event.target.value)
 		if(!event.target.value){
 			setErrors({
 				...errors,
 				startTime: 'Start time is required'
 			})
 		}
-		validateTimesOrder('startTime');
+		validateTimesOrder(event.target.value, 'startTime');
 		validateAppointments(event.target.value, 'startTime');
 	}
 
@@ -100,14 +109,14 @@ export default function AppointmentsForm({ appointments, loading }: Appointments
 			...errors,
 			endTime: null
 		})
-		setEndTime(new Date(event.target.value))
+		setEndTime(event.target.value)
 		if(!event.target.value){
 			setErrors({
 				...errors,
 				endTime: 'End time is required'
 			})
 		}
-		validateTimesOrder('endTime');
+		validateTimesOrder(event.target.value,'endTime');
 		validateAppointments(event.target.value, 'endTime');
 	}
 
@@ -125,15 +134,28 @@ export default function AppointmentsForm({ appointments, loading }: Appointments
 		})
 	}
 
-	const validateTimesOrder =  (input: string) => {
-		if(startTime && endTime){
-			if(endTime.getTime() < startTime.getTime()){
-				setErrors({
-					...errors,
-					[input]: `${input} should't be ${(input === 'startTime' ? 'greater' : 'less')} than ${(input === 'startTime' ? 'endTime' : 'startTime')}` ,
-				})
+	const validateTimesOrder =  (inputValue: string, input: string) => {
+		const valueDate = new Date(inputValue);
+		if(input === 'startTime'){
+			if(new Date(valueDate) && endTime){
+				if(new Date(endTime).getTime() < valueDate.getTime()){
+					setErrors({
+						...errors,
+						startTime: `startTime should't be greater than endTime` ,
+					})
+				}
+				return;
 			}
-			return;
+		} else {
+			if(startTime && valueDate){
+				if(valueDate.getTime() < new Date(startTime).getTime()){
+					setErrors({
+						...errors,
+						endTime: `endTime should't be less than startTime` ,
+					})
+				}
+				return;
+			}
 		}
 	}
 
@@ -183,6 +205,7 @@ export default function AppointmentsForm({ appointments, loading }: Appointments
 						className={styles.input}
 						type="datetime-local"
 						onChange={onChangeStartTime}
+						value={startTime}
 						disabled={loading || loadingPost}
 					/>
 				</label>
@@ -191,6 +214,7 @@ export default function AppointmentsForm({ appointments, loading }: Appointments
 					<input
 						className={styles.input}
 						type="datetime-local"
+						value={endTime}
 						onChange={onChangeEndTime}
 						disabled={loading || loadingPost}
 					/>
