@@ -1,16 +1,27 @@
+import { options } from "../../constants";
+import { Appointment } from "../../useAppointmentsApi";
 import styles from "./AppointmentList.module.css";
 
-export default function AppointmentList() {
+interface loadingPostProps {
+    appointments: Appointment[],
+    loading: boolean,
+}
+
+export default function loadingPost({ appointments, loading }: loadingPostProps) {
     return (
         <section className={styles.appointmentsContainer}>
-            <h2 className={styles.appointmentsTitle}>Existing Appointments</h2>
+            <h2 className={styles.appointmentsTitle}> Existing Appointments</h2>
+            {loading && <span className={styles.loader}></span>}
+
             <ul className={styles.appointments}>
-                <li className={styles.appointment}>
-                    <b>John Smith</b>
-                    <p>
-                        {new Date().toDateString()} - {new Date().toTimeString()}
-                    </p>
-                </li>
+                {appointments.map(appointment =>
+                    <li key={appointment.name + appointment.startTime} className={styles.appointment}>
+                        <b>{appointment.name}</b>
+                        <p>
+                            {new Date(appointment.startTime).toLocaleDateString("en-US", options)} - {new Date(appointment.endTime).toLocaleDateString("en-US", options)}
+                        </p>
+                    </li>
+                )}
             </ul>
         </section>
     )

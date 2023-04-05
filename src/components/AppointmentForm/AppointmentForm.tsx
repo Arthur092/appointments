@@ -1,15 +1,25 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useAppointmentsApi } from '../../useAppointmentsApi';
 import styles from "./AppointmentForm.module.css";
 
+interface AppointmentsFormProps {
+	loading: boolean;
+	loadingPost: boolean;
+	setLoadingPost: (value: boolean) => void;
+}
+
 type Errors = Record<string, string | null>;
-export default function AppointmentsForm() {
+
+export default function AppointmentsForm({ loading, setLoadingPost, loadingPost }: AppointmentsFormProps) {
 	const API = useAppointmentsApi();
 	const [name, setName] = useState('');
-	const [startTime, setStartTime] = useState<Date | string>('');
-	const [endTime, setEndTime] = useState<Date | string>('');
+	const [startTime, setStartTime] = useState<Date | undefined>(undefined);
+	const [endTime, setEndTime] = useState<Date | undefined>(undefined);
 	const [errors, setErrors] = useState<Errors>({});
 	const [isErrors, setIsErrors] = useState(false);
+
+	const successTimer = useRef<any>(null)
+	const [success, setSuccess] = useState(false);
 
 	useEffect(() => {
 		if (Object.values(errors).some(val => val)){
@@ -23,15 +33,33 @@ export default function AppointmentsForm() {
 
 	const onSubmit = async (event: React.FormEvent) => {
 		event.preventDefault();
+		setErrorText(null);
+		setSuccess(false);
+		if(successTimer.current){
+			clearTimeout(successTimer.current);
+		}
 		if(!validateForm()){
 			return;
 		}
-		setErrorText(null);
-		await API.post({
-			name: "John Smith",
-			startTime: Date.now(),
-			endTime: Date.now(),
-		});
+		setLoadingPost(true)
+		try {
+			await API.post({
+				name,
+				startTime: startTime!.getTime(),
+				endTime: endTime!.getTime(),
+			});
+			setSuccess(true);
+			setLoadingPost(false)
+			successTimer.current = setTimeout(() => {
+				setSuccess(false);
+			},3000);
+			setName('');
+			setStartTime(undefined);
+			setEndTime(undefined);
+		} catch (error) {
+			setLoadingPost(false)
+			if(typeof error === 'string') setErrorText(error);
+		}
 	};
 
 	const validateForm = () => {
@@ -111,7 +139,9 @@ export default function AppointmentsForm() {
 						className={styles.input}
 						type="text"
 						placeholder="John Smith"
+						value={name}
 						onChange={onChangeName}
+						disabled={loading || loadingPost}
 					/>
 				</label>
 				<label className={styles.label}>
@@ -120,6 +150,7 @@ export default function AppointmentsForm() {
 						className={styles.input}
 						type="datetime-local"
 						onChange={onChangeStartTime}
+						disabled={loading || loadingPost}
 					/>
 				</label>
 				<label className={styles.label}>
@@ -128,12 +159,19 @@ export default function AppointmentsForm() {
 						className={styles.input}
 						type="datetime-local"
 						onChange={onChangeEndTime}
+						disabled={loading || loadingPost}
 					/>
 				</label>
-				<button disabled={isErrors} type="submit" className={styles.button}>
+				<button disabled={loading || loadingPost || isErrors} type="submit" className={styles.button}>
 					Submit Request
 				</button>
+				{loadingPost && <span className={styles.loader}></span>}
 			</form>
+			{success && (
+					<div className={styles.success} aria-live="polite">
+						<p>Appointment added successfully!</p>
+					</div>
+				)}
 			{isErrors &&
 				<ul className={styles.error}>
 					{Object.values(errors).reduce((list: JSX.Element[], error) => {
