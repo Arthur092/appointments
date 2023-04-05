@@ -8,7 +8,7 @@ function App() {
 	const API = useAppointmentsApi();
 	const [appointments, setAppointments] = useState<Appointment[]>([]);
 	const [loading, setLoading] = useState(true);
-	const [loadingPost, setLoadingPost] = useState(false);
+
 	useEffect(() => {
 		const getAppointments = async () => {
 			console.log('getApp')
@@ -33,9 +33,8 @@ function App() {
 			</header>
 			<main className={styles.content}>
 				<AppointmentsForm
+					appointments={appointments}
 					loading={loading}
-					loadingPost={loadingPost}
-					setLoadingPost={setLoadingPost}
 				/>
 				<AppointmentList
 					appointments={appointments}

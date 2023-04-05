@@ -1,25 +1,30 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useAppointmentsApi } from '../../useAppointmentsApi';
+import { Appointment, useAppointmentsApi } from '../../useAppointmentsApi';
 import styles from "./AppointmentForm.module.css";
 
 interface AppointmentsFormProps {
 	loading: boolean;
-	loadingPost: boolean;
-	setLoadingPost: (value: boolean) => void;
+	appointments: Appointment[],
 }
 
 type Errors = Record<string, string | null>;
 
-export default function AppointmentsForm({ loading, setLoadingPost, loadingPost }: AppointmentsFormProps) {
+
+export default function AppointmentsForm({ appointments, loading }: AppointmentsFormProps) {
 	const API = useAppointmentsApi();
+
 	const [name, setName] = useState('');
 	const [startTime, setStartTime] = useState<Date | undefined>(undefined);
 	const [endTime, setEndTime] = useState<Date | undefined>(undefined);
+
 	const [errors, setErrors] = useState<Errors>({});
 	const [isErrors, setIsErrors] = useState(false);
+	const [errorText, setErrorText] = useState<string | null>(null);
+
+	const [loadingPost, setLoadingPost] = useState(false);
+	const [success, setSuccess] = useState(false);
 
 	const successTimer = useRef<any>(null)
-	const [success, setSuccess] = useState(false);
 
 	useEffect(() => {
 		if (Object.values(errors).some(val => val)){
@@ -28,8 +33,6 @@ export default function AppointmentsForm({ loading, setLoadingPost, loadingPost 
 			setIsErrors(false)
 		}
 	},[errors])
-
-	const [errorText, setErrorText] = useState<string | null>(null);
 
 	const onSubmit = async (event: React.FormEvent) => {
 		event.preventDefault();
@@ -62,6 +65,78 @@ export default function AppointmentsForm({ loading, setLoadingPost, loadingPost 
 		}
 	};
 
+	const onChangeName = (event: React.ChangeEvent<HTMLInputElement>) => {
+		setErrors({
+			...errors,
+			name: null
+		})
+		setName(event.target.value)
+		if(!event.target.value){
+			setErrors({
+				...errors,
+				name: 'Name is required'
+			})
+		}
+	}
+
+	const onChangeStartTime = (event: React.ChangeEvent<HTMLInputElement>) => {
+		setErrors({
+			...errors,
+			startTime: null
+		})
+		setStartTime(new Date(event.target.value))
+		if(!event.target.value){
+			setErrors({
+				...errors,
+				startTime: 'Start time is required'
+			})
+		}
+		validateTimesOrder('startTime');
+		validateAppointments(event.target.value, 'startTime');
+	}
+
+	const onChangeEndTime = (event: React.ChangeEvent<HTMLInputElement>) => {
+		setErrors({
+			...errors,
+			endTime: null
+		})
+		setEndTime(new Date(event.target.value))
+		if(!event.target.value){
+			setErrors({
+				...errors,
+				endTime: 'End time is required'
+			})
+		}
+		validateTimesOrder('endTime');
+		validateAppointments(event.target.value, 'endTime');
+	}
+
+	const validateAppointments = (inputValue: string, input: string) => {
+		const valueDate = new Date(inputValue);
+		appointments.forEach((appoitment) => {
+			const appStartDate = new Date(appoitment.startTime);
+			const appEndDate = new Date(appoitment.endTime);
+			if(valueDate >= appStartDate && valueDate <= appEndDate){
+				setErrors({
+					...errors,
+					[input]: `There is a conflict with ${input} regarding existing appointments`
+				})
+			}
+		})
+	}
+
+	const validateTimesOrder =  (input: string) => {
+		if(startTime && endTime){
+			if(endTime.getTime() < startTime.getTime()){
+				setErrors({
+					...errors,
+					[input]: `${input} should't be ${(input === 'startTime' ? 'greater' : 'less')} than ${(input === 'startTime' ? 'endTime' : 'startTime')}` ,
+				})
+			}
+			return;
+		}
+	}
+
 	const validateForm = () => {
 		const currentErrors: Errors = {}
 		if(!name){
@@ -82,48 +157,6 @@ export default function AppointmentsForm({ loading, setLoadingPost, loadingPost 
 		}
 		return true
 	};
-
-	const onChangeStartTime = (event: React.ChangeEvent<HTMLInputElement>) => {
-		setErrors({
-			...errors,
-			startTime: null
-		})
-		setStartTime(new Date(event.target.value))
-		if(!event.target.value){
-			setErrors({
-				...errors,
-				startTime: 'Start time is required'
-			})
-		}
-	}
-
-	const onChangeEndTime = (event: React.ChangeEvent<HTMLInputElement>) => {
-		setErrors({
-			...errors,
-			endTime: null
-		})
-		setEndTime(new Date(event.target.value))
-		if(!event.target.value){
-			setErrors({
-				...errors,
-				endTime: 'End time is required'
-			})
-		}
-	}
-
-	const onChangeName = (event: React.ChangeEvent<HTMLInputElement>) => {
-		setErrors({
-			...errors,
-			name: null
-		})
-		setName(event.target.value)
-		if(!event.target.value){
-			setErrors({
-				...errors,
-				name: 'Name is required'
-			})
-		}
-	}
 
     return <React.Fragment>
 			{errorText && (
